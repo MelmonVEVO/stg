@@ -1,4 +1,5 @@
 #include "bullet.h"
+#include "enemy.h"
 #include "resource_dir.h"
 #include "utils.h"
 #include <float.h>
@@ -6,23 +7,8 @@
 #include <raymath.h>
 #include <stdbool.h>
 
-#define VIEWPORT_WIDTH 400.0f
-#define VIEWPORT_HEIGHT 300.0f
 #define PLAYER_SPEED 200.0f
-#define MAX_ENEMIES 100
 #define PLAYER_FIRE_TIME 0.06f
-
-typedef struct {
-  Movement movement;
-  bool dead;
-} PlayerData;
-
-typedef struct {
-  Movement movement;
-  Rectangle collision_box;
-  int health;
-} EnemyData;
-
 /* typedef struct { */
 /*   EnemyData *enemies; */
 /*   size_t count; */
@@ -69,6 +55,8 @@ void move_player(float delta) {
 void _process(float delta) { process_bullets(delta); }
 
 void _input(float delta) {
+  if (player.dead)
+    return;
   move_player(delta);
   fire_time -= delta;
   if (IsKeyDown(KEY_Z) && fire_time <= 0) {
@@ -96,11 +84,13 @@ void _draw(RenderTexture2D target) {
   ClearBackground(BLACK);
   DrawCircle(player.movement.position.x, player.movement.position.y, 9.0f,
              GREEN);
+#ifdef DEBUG
   DrawText(TextFormat("Player Position (%02.02f, %02.02f)",
                       player.movement.position.x, player.movement.position.y),
            20, 20, 10, WHITE);
   DrawText(TextFormat("Bullets: %d", current_bullets), 20, 50, 10, WHITE);
   DrawText(TextFormat("FPS: %d", GetFPS()), 260, 20, 10, WHITE);
+#endif
   draw_bullets();
   EndTextureMode();
 

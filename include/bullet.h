@@ -1,6 +1,7 @@
 #ifndef BULLET_H
 #define BULLET_H
 
+#include "enemy.h"
 #include "utils.h"
 #include <raylib.h>
 
@@ -24,7 +25,7 @@ typedef struct {
   bool player;
 } Bullet;
 
-void initialise_bullet_pool();
+void initialise_bullet_pool(void);
 
 void process_bullets(float delta);
 
@@ -44,5 +45,8 @@ void bullet_fire_arc(Vector2 initial_position, float initial_angle,
 void bullet_fire_random_sphere(Vector2 initial_position, float initial_angle,
                                BulletArgs args, bool player_bullet,
                                int bullets_in_sphere, float sphere_radius);
+
+void check_bullet_collisions(EnemyData enemies[MAX_ENEMIES],
+                             PlayerData player_data, void (*kill_player)(void));
 
 #endif

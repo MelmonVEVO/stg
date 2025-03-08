@@ -12,9 +12,9 @@ CFLAGS := -I$(INC_DIR) -Wall -Wextra
 LDFLAGS := -lraylib -lm
 
 ifeq ($(DEBUG), 1)
-	CFLAGS += -g -DDEBUG
+	CFLAGS += -g -Og -DDEBUG
 else
-	CFLAGS += -O2
+	CFLAGS += -O2 -DRELEASE
 endif
 
 .PHONY: all clean
