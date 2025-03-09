@@ -1,6 +1,9 @@
 #include "utils.h"
+#include <raymath.h>
 
 Vector2 accelerate(Vector2 vector, float acceleration, float delta) {
+  if (Vector2Length(vector) == 0.0f)
+    return vector;
   return Vector2Add(
       vector, Vector2Scale(Vector2Normalize(vector), acceleration * delta));
 }

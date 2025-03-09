@@ -25,6 +25,8 @@ typedef struct {
   bool dead;
 } PlayerData;
 
+typedef short Flags;
+
 Vector2 accelerate(Vector2 vector, float acceleration, float delta);
 
 void move(Movement *movement, float delta);

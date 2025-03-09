@@ -6,27 +6,28 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #define PLAYER_SPEED 200.0f
 #define PLAYER_FIRE_TIME 0.06f
-/* typedef struct { */
-/*   EnemyData *enemies; */
-/*   size_t count; */
-/*   size_t capacity; */
-/* } Enemies; */
 
 static const BulletArgs PLAYER_BULLET_ARGS =
     (BulletArgs){.max_speed = FLT_MAX,
-                 .initial_speed = 600.0f,
+                 .initial_speed = 800.0f,
                  .initial_ttl = 2.0f,
                  .acceleration = 0.0f,
                  .angular_velocity = 0.0f};
 
 static PlayerData player = {0};
-static EnemyData enemies[MAX_ENEMIES] = {0};
 static float fire_time = 0;
 
 extern int current_bullets;
+extern EnemyData enemies[MAX_ENEMIES];
+
+static void kill_player(void) {
+  printf("Player was hit!\n");
+  player.dead = true;
+}
 
 void move_player(float delta) {
   player.movement.velocity.x = 0, player.movement.velocity.y = 0;
@@ -52,7 +53,11 @@ void move_player(float delta) {
             VIEWPORT_HEIGHT - 20.0f);
 }
 
-void _process(float delta) { process_bullets(delta); }
+void _process(float delta) {
+  process_enemies(delta);
+  process_bullets(delta);
+  check_bullet_collisions(player, &kill_player);
+}
 
 void _input(float delta) {
   if (player.dead)
@@ -63,16 +68,16 @@ void _input(float delta) {
     fire_time = PLAYER_FIRE_TIME;
     bullet_fire_one((Vector2){player.movement.position.x - 10.0f,
                               player.movement.position.y},
-                    0.0f, PLAYER_BULLET_ARGS, true);
+                    1.5f * PI, PLAYER_BULLET_ARGS, true);
     bullet_fire_one((Vector2){player.movement.position.x + 10.0f,
                               player.movement.position.y},
-                    0.0f, PLAYER_BULLET_ARGS, true);
+                    1.5f * PI, PLAYER_BULLET_ARGS, true);
     bullet_fire_one((Vector2){player.movement.position.x + 20.0f,
                               player.movement.position.y + 9.0f},
-                    15.0f, PLAYER_BULLET_ARGS, true);
+                    (1.5f * PI) + (PI / 16.0f), PLAYER_BULLET_ARGS, true);
     bullet_fire_one((Vector2){player.movement.position.x - 20.0f,
                               player.movement.position.y + 9.0f},
-                    -15.0f, PLAYER_BULLET_ARGS, true);
+                    (1.5f * PI) - (PI / 16.0f), PLAYER_BULLET_ARGS, true);
   }
 }
 
@@ -92,11 +97,12 @@ void _draw(RenderTexture2D target) {
   DrawText(TextFormat("FPS: %d", GetFPS()), 260, 20, 10, WHITE);
 #endif
   draw_bullets();
+  draw_enemies();
   EndTextureMode();
 
   BeginDrawing();
   ClearBackground(BLACK);
-  DrawTexturePro( // idk what this is doing lmao
+  DrawTexturePro(
       target.texture,
       (Rectangle){0.0f, 0.0f, target.texture.width,
                   (float)-target.texture.height},
@@ -125,6 +131,9 @@ int main(void) {
   initialise_bullet_pool();
   player.movement.position.x = VIEWPORT_WIDTH / 2;
   player.movement.position.y = VIEWPORT_HEIGHT - 30.0f;
+  enemies[0] = popcorn;
+  enemies[0].movement.position.x = VIEWPORT_WIDTH / 2;
+  enemies[0].movement.position.y = VIEWPORT_HEIGHT / 4;
   while (!WindowShouldClose()) {
     delta = GetFrameTime();
     _input(delta);

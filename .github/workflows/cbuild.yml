@@ -1,4 +1,4 @@
-name: Does it do
+name: Does it build
 
 on:
   push:
@@ -12,5 +12,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: make
+
+      - name: Make the thing
         run: make
