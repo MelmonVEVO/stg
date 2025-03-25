@@ -145,7 +145,7 @@ void check_bullet_collisions(PlayerData player_data,
         }
       }
     }
-    if (player_data.dead)
+    if (player_data.recovery_time > 0.0f)
       return;
     if (CheckCollisionRecs(create_centred_rectangle(bullet->movement.position.x,
                                                     bullet->movement.position.y,

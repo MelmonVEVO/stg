@@ -7,8 +7,9 @@ BUILD_DIR := ./out
 
 SRC := $(wildcard $(SRC_DIR)/*.c)
 OBJ := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRC))
+DEP := $(OBJ:.o=.d)
 
-CFLAGS := -I$(INC_DIR) -Wall -Wextra
+CFLAGS := -I$(INC_DIR) -Wall -Wextra -MMD -MP
 LDFLAGS := -lraylib -lm
 
 ifeq ($(DEBUG), 1)
@@ -37,3 +38,5 @@ debug:
 
 clean:
 	rm -r $(BUILD_DIR)
+
+-include $(DEP)

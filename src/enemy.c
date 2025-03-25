@@ -42,7 +42,8 @@ const EnemyData popcorn = {.movement = {(Vector2){0, 0}, (Vector2){0, 300.0f}},
                            .collision_box = {0, 0, 16.0f, 16.0f},
                            .process = &popcorn_process,
                            .die = &popcorn_die,
-                           .draw = &popcorn_draw};
+                           .draw = &popcorn_draw,
+                           .config_flags = 0};
 
 // --- NORMAL ENEMY STUFF ---
 void damage_enemy(EnemyData *enemy, int damage) {

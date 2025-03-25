@@ -14,6 +14,7 @@ struct EnemyData {
   void (*die)(EnemyData *self);
   int health;
   float timer;
+  Flags config_flags;
 };
 
 extern const EnemyData popcorn;

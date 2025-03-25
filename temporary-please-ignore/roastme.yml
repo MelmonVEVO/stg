@@ -1,0 +1,56 @@
+This is unfinished, I need to make the reviewer work first.
+name: MSGK Review
+
+on:
+  pull_request:
+    types: [ready_for_review, opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout PR reviewer repository
+        uses: actions/checkout@v3
+        with:
+          repository: your-username/pr-reviewer-repo # Repository containing the reviewer code
+          ref: main
+          token: ${{ secrets.PAT_TOKEN }} # Personal access token with repo scope
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get PR diff
+        id: get-diff
+        run: |
+          PR_DIFF=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3.diff" \
+            "${{ github.event.pull_request.url }}")
+          echo "PR_DIFF<<EOF" >> $GITHUB_ENV
+          echo "$PR_DIFF" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Review PR with Claude
+        id: claude-review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          REPO_NAME: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # Run the reviewer script
+          REVIEW_RESULT=$(node dist/review-action.js)
+
+          # Post comment to PR
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "${{ github.event.pull_request.comments_url }}" \
+            -d "{\"body\":\"$REVIEW_RESULT\"}"

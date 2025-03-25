@@ -10,6 +10,7 @@
 
 #define PLAYER_SPEED 200.0f
 #define PLAYER_FIRE_TIME 0.06f
+#define PLAYER_RECOVERY_TIME 5.0f
 
 static const BulletArgs PLAYER_BULLET_ARGS =
     (BulletArgs){.max_speed = FLT_MAX,
@@ -20,13 +21,14 @@ static const BulletArgs PLAYER_BULLET_ARGS =
 
 static PlayerData player = {0};
 static float fire_time = 0;
+static float recovery_time = 0.0;
 
 extern int current_bullets;
 extern EnemyData enemies[MAX_ENEMIES];
 
 static void kill_player(void) {
   printf("Player was hit!\n");
-  player.dead = true;
+  player.recovery_time = PLAYER_RECOVERY_TIME;
 }
 
 void move_player(float delta) {
@@ -57,10 +59,11 @@ void _process(float delta) {
   process_enemies(delta);
   process_bullets(delta);
   check_bullet_collisions(player, &kill_player);
+  player.recovery_time = MAX(player.recovery_time - delta, 0.0f);
 }
 
 void _input(float delta) {
-  if (player.dead)
+  if (player.recovery_time > 0.0f)
     return;
   move_player(delta);
   fire_time -= delta;
@@ -87,8 +90,10 @@ void _draw(RenderTexture2D target) {
 
   BeginTextureMode(target);
   ClearBackground(BLACK);
-  DrawCircle(player.movement.position.x, player.movement.position.y, 9.0f,
-             GREEN);
+  if (player.recovery_time <= 0.0) {
+    DrawCircle(player.movement.position.x, player.movement.position.y, 9.0f,
+               GREEN);
+  }
 #ifdef DEBUG
   DrawText(TextFormat("Player Position (%02.02f, %02.02f)",
                       player.movement.position.x, player.movement.position.y),

@@ -3,6 +3,7 @@
 
 #include <raylib.h>
 #include <raymath.h>
+#include <stdint.h>
 
 #define VECTOR2UP (Vector2){0, -1.0f}
 #define VECTOR2DOWN (Vector2){0, 1.0f}
@@ -22,10 +23,10 @@ typedef struct {
 
 typedef struct {
   Movement movement;
-  bool dead;
+  float recovery_time;
 } PlayerData;
 
-typedef short Flags;
+typedef int16_t Flags;
 
 Vector2 accelerate(Vector2 vector, float acceleration, float delta);
 
