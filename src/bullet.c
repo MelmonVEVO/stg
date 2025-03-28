@@ -1,6 +1,7 @@
 #include "bullet.h"
 #include "enemy.h"
 #include "utils.h"
+#include <math.h>
 #include <raylib.h>
 #include <raymath.h>
 #include <stdio.h>
@@ -8,7 +9,7 @@
 
 static const Vector2 BULLET_COLLISION_RECT = (Vector2){2.0f, 2.0f};
 static const Vector2 PLAYER_COLLISION_RECT = (Vector2){2.0f, 2.0f};
-unsigned int current_bullets;
+Texture2D bullet_sprite;
 
 typedef struct {
   int top;
@@ -18,6 +19,8 @@ typedef struct {
 static Bullet bullets[MAX_BULLETS] = {0};
 static BulletStack available_bullet_stack =
     (BulletStack){.top = MAX_BULLETS - 1};
+
+unsigned int current_bullets;
 
 extern EnemyData enemies[MAX_ENEMIES];
 
@@ -70,6 +73,7 @@ void initialise_bullet_pool(void) {
     available_bullet_stack.stack[i] = &bullets[i];
   }
   current_bullets = 0;
+  bullet_sprite = LoadTexture("sprites/bullet/directed_bullet_2.png");
 }
 
 void process_bullets(float delta) {
@@ -94,8 +98,19 @@ void draw_bullets(void) {
   for (int i = 0; i < MAX_BULLETS; i++) {
     if (!bullets[i].active)
       continue;
-    DrawCircle(bullets[i].movement.position.x, bullets[i].movement.position.y,
-               5.0f, WHITE);
+    Bullet *bullet = &bullets[i];
+    Vector2 at = bullet->movement.position;
+    float rotation =
+        atan2f(bullet->movement.velocity.y, bullet->movement.velocity.x) *
+        RAD2DEG;
+    Rectangle src = (Rectangle){.width = bullet_sprite.width,
+                                .height = bullet_sprite.height};
+    Rectangle dest =
+        (Rectangle){bullet->movement.position.x, bullet->movement.position.y,
+                    bullet_sprite.width, bullet_sprite.height};
+    Vector2 origin =
+        (Vector2){bullet_sprite.width * 0.5f, bullet_sprite.height * 0.5f};
+    DrawTexturePro(bullet_sprite, src, dest, origin, rotation, WHITE);
   }
 }
 
@@ -108,8 +123,8 @@ void bullet_fire_ring(Vector2 initial_position, float initial_angle,
                       BulletArgs args, bool player_bullet, int bullets_in_ring,
                       float ring_offset) {
   if (bullets_in_ring < 2) {
-    fprintf(stderr, "Tried to fire a ring with count less than 2. Please check "
-                    "the firing configurations!");
+    log_warning("Tried to fire a ring with less than 2 bullets. Please check "
+                "the firing configurations!");
     return;
   }
   float angle_per_bullet = get_angle_per_bullet(bullets_in_ring);

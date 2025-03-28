@@ -4,6 +4,9 @@
 #include "utils.h"
 #include <raylib.h>
 
+#define MAX_ENEMIES 255
+#define POPCORN_LEFT 0b00000001
+
 typedef struct EnemyData EnemyData;
 
 struct EnemyData {
@@ -14,8 +17,11 @@ struct EnemyData {
   void (*draw)(EnemyData *self);
   void (*die)(EnemyData *self);
   int health;
-  float timer;
+  float time_alive;
   Flags config_flags;
+  /* char *enemy_name; */
+  int score_value;
+  /* float tension_value */
 };
 
 extern const EnemyData popcorn_drone;
