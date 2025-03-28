@@ -11,6 +11,8 @@
 #define PLAYER_FIRE_TIME 0.06f
 #define PLAYER_RECOVERY_TIME 5.0f
 
+PlayerData player = {0};
+
 static const BulletArgs PLAYER_BULLET_ARGS =
     (BulletArgs){.max_speed = FLT_MAX,
                  .initial_speed = 800.0f,
@@ -18,7 +20,6 @@ static const BulletArgs PLAYER_BULLET_ARGS =
                  .acceleration = 0.0f,
                  .angular_velocity = 0.0f};
 
-static PlayerData player = {0};
 static float fire_time = 0;
 static float recovery_time = 0.0;
 static Font mgsinker;
@@ -95,10 +96,10 @@ void _draw(RenderTexture2D target) {
                GREEN);
   }
 #ifdef DEBUG
-  DrawTextEx(mgsinker, TextFormat("Bullets: %d", current_bullets),
-             (Vector2){10.0f, 10.0f}, 16, 0, WHITE);
-  DrawTextEx(mgsinker, TextFormat("FPS: %d", GetFPS()),
-             (Vector2){10.0f, 300.0f}, 16, 0, WHITE);
+  DrawTextEx(mgsinker, TextFormat("bullets: %d", current_bullets),
+             (Vector2){10.0f, 10.0f}, (float)mgsinker.baseSize, 1, WHITE);
+  DrawTextEx(mgsinker, TextFormat("fps: %d", GetFPS()), (Vector2){10.0f, 30.0f},
+             (float)mgsinker.baseSize, 1, WHITE);
 #endif
   draw_bullets();
   draw_enemies();
@@ -120,13 +121,14 @@ void _draw(RenderTexture2D target) {
 
 int main(void) {
   SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
-  ChangeDirectory("resources");
-  mgsinker = LoadFontEx("MGSinker.ttf", 16, 0, 255);
 
   InitWindow((int)VIEWPORT_WIDTH, (int)VIEWPORT_HEIGHT, "STG");
   SetWindowMinSize((int)VIEWPORT_WIDTH, (int)VIEWPORT_HEIGHT);
-  SetTargetFPS(60);
+  SetTargetFPS(120);
   HideCursor();
+
+  ChangeDirectory("resources");
+  mgsinker = LoadFontEx("MGSinker.ttf", 8, 0, 255);
 
   RenderTexture2D target = LoadRenderTexture(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
   SetTextureFilter(target.texture,
@@ -136,9 +138,18 @@ int main(void) {
   initialise_bullet_pool();
   player.movement.position.x = VIEWPORT_WIDTH / 2;
   player.movement.position.y = VIEWPORT_HEIGHT - 30.0f;
+
   enemies[0] = popcorn_drone;
-  enemies[0].movement.position.x = VIEWPORT_WIDTH / 2;
+  enemies[0].movement.position.x = VIEWPORT_WIDTH / 3;
   enemies[0].movement.position.y = VIEWPORT_HEIGHT / 4;
+  enemies[0].config_flags = 0;
+  enemies[0].init(&enemies[0]);
+
+  enemies[1] = popcorn_drone;
+  enemies[1].movement.position.x = VIEWPORT_WIDTH * 2 / 3;
+  enemies[1].movement.position.y = VIEWPORT_HEIGHT / 4;
+  enemies[1].config_flags = 1;
+  enemies[1].init(&enemies[1]);
   while (!WindowShouldClose()) {
     delta = GetFrameTime();
     _input(delta);
