@@ -8,7 +8,7 @@
 
 static const Vector2 BULLET_COLLISION_RECT = (Vector2){2.0f, 2.0f};
 static const Vector2 PLAYER_COLLISION_RECT = (Vector2){2.0f, 2.0f};
-int current_bullets;
+unsigned int current_bullets;
 
 typedef struct {
   int top;
@@ -16,14 +16,16 @@ typedef struct {
 } BulletStack;
 
 static Bullet bullets[MAX_BULLETS] = {0};
-static BulletStack bullet_stack = (BulletStack){.top = MAX_BULLETS - 1};
+static BulletStack available_bullet_stack =
+    (BulletStack){.top = MAX_BULLETS - 1};
 
 extern EnemyData enemies[MAX_ENEMIES];
 
 static Bullet *pop_bullet() {
-  if (bullet_stack.top == -1)
+  if (available_bullet_stack.top == -1)
     return NULL;
-  Bullet *returned_bullet = bullet_stack.stack[bullet_stack.top--];
+  Bullet *returned_bullet =
+      available_bullet_stack.stack[available_bullet_stack.top--];
   returned_bullet->active = true;
   current_bullets++;
   return returned_bullet;
@@ -31,7 +33,7 @@ static Bullet *pop_bullet() {
 
 static void push_bullet(Bullet *bullet) {
   bullet->active = false;
-  bullet_stack.stack[++bullet_stack.top] = bullet;
+  available_bullet_stack.stack[++available_bullet_stack.top] = bullet;
   current_bullets--;
 }
 
@@ -65,7 +67,7 @@ static Vector2 get_bullet_start_position(Vector2 origin, float offset,
 
 void initialise_bullet_pool(void) {
   for (int i = 0; i < MAX_BULLETS; i++) {
-    bullet_stack.stack[i] = &bullets[i];
+    available_bullet_stack.stack[i] = &bullets[i];
   }
   current_bullets = 0;
 }

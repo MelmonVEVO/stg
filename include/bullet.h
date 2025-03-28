@@ -7,7 +7,7 @@
 
 #define MAX_BULLETS 20000
 
-extern int current_bullets;
+extern unsigned int current_bullets;
 
 typedef struct {
   float initial_speed;

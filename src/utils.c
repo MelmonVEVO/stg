@@ -13,6 +13,11 @@ void move(Movement *movement, float delta) {
   movement->position.y += movement->velocity.y * delta;
 }
 
+void update_collision_rect(Rectangle *collision_rect, Vector2 at) {
+  collision_rect->x = at.x - (collision_rect->width / 2.0f);
+  collision_rect->y = at.y - (collision_rect->height / 2.0f);
+}
+
 Rectangle create_centred_rectangle(int x, int y, Vector2 sizes) {
   return (Rectangle){x - (sizes.x / 2), y - (sizes.y / 2), sizes.x, sizes.y};
 }

@@ -1,6 +1,5 @@
 #include "bullet.h"
 #include "enemy.h"
-#include "resource_dir.h"
 #include "utils.h"
 #include <float.h>
 #include <raylib.h>
@@ -22,8 +21,9 @@ static const BulletArgs PLAYER_BULLET_ARGS =
 static PlayerData player = {0};
 static float fire_time = 0;
 static float recovery_time = 0.0;
+static Font mgsinker;
 
-extern int current_bullets;
+extern unsigned int current_bullets;
 extern EnemyData enemies[MAX_ENEMIES];
 
 static void kill_player(void) {
@@ -95,11 +95,10 @@ void _draw(RenderTexture2D target) {
                GREEN);
   }
 #ifdef DEBUG
-  DrawText(TextFormat("Player Position (%02.02f, %02.02f)",
-                      player.movement.position.x, player.movement.position.y),
-           20, 20, 10, WHITE);
-  DrawText(TextFormat("Bullets: %d", current_bullets), 20, 50, 10, WHITE);
-  DrawText(TextFormat("FPS: %d", GetFPS()), 260, 20, 10, WHITE);
+  DrawTextEx(mgsinker, TextFormat("Bullets: %d", current_bullets),
+             (Vector2){10.0f, 10.0f}, 16, 0, WHITE);
+  DrawTextEx(mgsinker, TextFormat("FPS: %d", GetFPS()),
+             (Vector2){10.0f, 300.0f}, 16, 0, WHITE);
 #endif
   draw_bullets();
   draw_enemies();
@@ -121,7 +120,8 @@ void _draw(RenderTexture2D target) {
 
 int main(void) {
   SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
-  SearchAndSetResourceDir("resources");
+  ChangeDirectory("resources");
+  mgsinker = LoadFontEx("MGSinker.ttf", 16, 0, 255);
 
   InitWindow((int)VIEWPORT_WIDTH, (int)VIEWPORT_HEIGHT, "STG");
   SetWindowMinSize((int)VIEWPORT_WIDTH, (int)VIEWPORT_HEIGHT);
@@ -136,7 +136,7 @@ int main(void) {
   initialise_bullet_pool();
   player.movement.position.x = VIEWPORT_WIDTH / 2;
   player.movement.position.y = VIEWPORT_HEIGHT - 30.0f;
-  enemies[0] = popcorn;
+  enemies[0] = popcorn_drone;
   enemies[0].movement.position.x = VIEWPORT_WIDTH / 2;
   enemies[0].movement.position.y = VIEWPORT_HEIGHT / 4;
   while (!WindowShouldClose()) {
@@ -146,6 +146,8 @@ int main(void) {
     _draw(target);
   }
 
+  UnloadFont(mgsinker);
   CloseWindow();
+
   return 0;
 }

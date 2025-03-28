@@ -9,6 +9,7 @@ typedef struct EnemyData EnemyData;
 struct EnemyData {
   Movement movement;
   Rectangle collision_box;
+  void (*init)(EnemyData *self);
   void (*process)(EnemyData *self, float delta);
   void (*draw)(EnemyData *self);
   void (*die)(EnemyData *self);
@@ -17,7 +18,7 @@ struct EnemyData {
   Flags config_flags;
 };
 
-extern const EnemyData popcorn;
+extern const EnemyData popcorn_drone;
 extern EnemyData enemies[MAX_ENEMIES];
 
 void damage_enemy(EnemyData *enemy, int damage);
