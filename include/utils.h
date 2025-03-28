@@ -14,7 +14,9 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define VIEWPORT_WIDTH 400.0f
 #define VIEWPORT_HEIGHT 300.0f
-#define MAX_ENEMIES 255
+#define TERM_WARNING "\x1b[33m"
+#define TERM_ERROR "\x1b[31m"
+#define TERM_NORMAL "\x1b[0m"
 
 typedef struct {
   Vector2 position;
@@ -26,7 +28,7 @@ typedef struct {
   float recovery_time;
 } PlayerData;
 
-typedef int16_t Flags;
+typedef uint32_t Flags;
 
 Vector2 accelerate(Vector2 vector, float acceleration, float delta);
 
@@ -35,5 +37,11 @@ void move(Movement *movement, float delta);
 void update_collision_rect(Rectangle *collision_rect, Vector2 at);
 
 Rectangle create_centred_rectangle(int x, int y, Vector2 sizes);
+
+Vector2 rectangle_centre(Rectangle rectangle);
+
+void log_warning(char *s);
+
+void log_error(char *s);
 
 #endif
