@@ -31,6 +31,8 @@ void process_bullets(float delta);
 
 void draw_bullets(void);
 
+// Note that the bullet_fire functions expect angles in degrees.
+
 void bullet_fire_one(Vector2 initial_position, float initial_angle,
                      BulletArgs args, bool player_bullet);
 

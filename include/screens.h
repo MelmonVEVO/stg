@@ -1,4 +1,5 @@
 // define screen stuff
+// TODO: screen stuff
 //
 // global variables (all extern)
 //

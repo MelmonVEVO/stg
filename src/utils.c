@@ -19,13 +19,40 @@ void update_collision_rect(Rectangle *collision_rect, Vector2 at) {
   collision_rect->y = at.y - (collision_rect->height / 2.0f);
 }
 
-Rectangle create_centred_rectangle(int x, int y, Vector2 sizes) {
-  return (Rectangle){x - (sizes.x / 2), y - (sizes.y / 2), sizes.x, sizes.y};
+Rectangle create_centred_rectangle(float x, float y, Vector2 sizes) {
+  return (Rectangle){x - (sizes.x * 0.5f), y - (sizes.y * 0.5f), sizes.x,
+                     sizes.y};
 }
 
 Vector2 rectangle_centre(Rectangle rectangle) {
   return (Vector2){rectangle.x + (rectangle.width / 2.0f),
                    rectangle.y + (rectangle.height / 2.0f)};
+}
+
+Stack initialise_stack(size_t capacity, size_t element_sizeof) {
+  Stack new = {.capacity = capacity, .top = 0};
+  new.items = malloc(element_sizeof * capacity);
+  return new;
+}
+
+void free_stack(Stack *stack) { free(stack->items); }
+
+void *pop_stack(Stack *stack) {
+  if (stack->top == -1UL) {
+    log_warning("Stack empty, skipping.");
+    return NULL;
+  }
+  void *returned_item = stack->items[stack->top--];
+  return returned_item;
+}
+
+void push_stack(Stack *stack, void *item) {
+  if (stack->top >= stack->capacity - 1) {
+    log_error("Tried to push to a full stack. Your code cocked up somewhere. "
+              "Have fun debugging!");
+    return;
+  }
+  stack->items[++stack->top] = item;
 }
 
 void log_warning(char *s) {

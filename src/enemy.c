@@ -6,7 +6,12 @@
 #include <stdbool.h>
 
 EnemyData enemies[MAX_ENEMIES] = {0};
+static int enemy_stack_top = MAX_ENEMIES - 1;
+static EnemyData *available_enemy_stack[MAX_ENEMIES];
+
 unsigned int active_enemy_count = 0;
+
+extern unsigned long score;
 
 void enemy_noop(EnemyData *n) {}
 
@@ -78,23 +83,71 @@ static void popcorn_drone_die(EnemyData *self) {
 }
 
 const EnemyData popcorn_drone = {
-    .movement = {(Vector2){0, 0}, (Vector2){0, POPCORN_INITIAL_VELOCITY}},
+    .movement = {.velocity = (Vector2){0, POPCORN_INITIAL_VELOCITY}},
     .health = 20,
     .collision_box = {0, 0, 16.0f, 16.0f},
     .init = &enemy_noop,
     .process = &popcorn_drone_process,
     .die = &popcorn_drone_die,
     .draw = &popcorn_drone_draw,
-    .config_flags = 0};
+    .score_value = 120,
+    .name = "Unnamed AQ-56"};
+
+// --- TWIST DRONE ---
+#define TWIST_ACCELERATION -322.2f
+
+static void twist_drone_process(EnemyData *self, float delta) {
+  update_collision_rect(&self->collision_box, self->movement.position);
+  self->time_alive += delta;
+
+  self->movement.velocity.y += TWIST_ACCELERATION * delta;
+  move(&self->movement, delta);
+  return;
+}
+
+static void twist_drone_draw(EnemyData *self) {
+  DrawCircle(self->movement.position.x, self->movement.position.y, 10.0f,
+             YELLOW);
+  DrawRectangleLines(self->collision_box.x, self->collision_box.y,
+                     self->collision_box.width, self->collision_box.height,
+                     RED);
+}
+
+static void twist_drone_die(EnemyData *self) {
+  extern PlayerData player;
+  Vector2 direction =
+      Vector2Subtract(player.movement.position, self->movement.position);
+  float angle = atan2f(direction.y, direction.x) * RAD2DEG;
+  bullet_fire_arc(self->movement.position, angle,
+                  (BulletArgs){
+                      .initial_ttl = 5.0f,
+                      .initial_speed = 255.0f,
+                      .max_speed = 255.0f,
+                  },
+                  false, 3, 5.0f, 20.0f);
+}
+
+const EnemyData twist_drone = {
+    .movement = {.velocity = (Vector2){0, POPCORN_INITIAL_VELOCITY}},
+    .health = 20,
+    .collision_box = {0, 0, 16.0f, 16.0f},
+    .init = &enemy_noop,
+    .process = &twist_drone_process,
+    .die = &twist_drone_die,
+    .draw = &twist_drone_draw,
+    .score_value = 120,
+    .name = "KR-88 Twist"};
 
 // --- NORMAL ENEMY STUFF ---
 
-void spawn_enemy(EnemyData template, Flags config_flags) {}
+void spawn_enemy(EnemyData template, Flags config_flags,
+                 Vector2 initial_position) {}
 
 void damage_enemy(EnemyData *enemy, int damage) {
   enemy->health -= damage;
   if (enemy->health <= 0) {
     enemy->die(enemy);
+    score += enemy->score_value;
   }
 }
 

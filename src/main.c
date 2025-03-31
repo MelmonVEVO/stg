@@ -12,11 +12,12 @@
 #define PLAYER_RECOVERY_TIME 5.0f
 
 PlayerData player = {0};
+unsigned long score = 0;
 
 static const BulletArgs PLAYER_BULLET_ARGS =
     (BulletArgs){.max_speed = FLT_MAX,
-                 .initial_speed = 800.0f,
-                 .initial_ttl = 2.0f,
+                 .initial_speed = 1000.0f,
+                 .initial_ttl = 1.0f,
                  .acceleration = 0.0f,
                  .angular_velocity = 0.0f};
 
@@ -49,11 +50,11 @@ void move_player(float delta) {
   player.movement.velocity.y *= delta;
 
   player.movement.position.x =
-      Clamp(player.movement.position.x + player.movement.velocity.x, 20.0f,
-            VIEWPORT_WIDTH - 20.0f);
+      Clamp(player.movement.position.x + player.movement.velocity.x, 10.0f,
+            VIEWPORT_WIDTH - 10.0f);
   player.movement.position.y =
-      Clamp(player.movement.position.y + player.movement.velocity.y, 20.0f,
-            VIEWPORT_HEIGHT - 20.0f);
+      Clamp(player.movement.position.y + player.movement.velocity.y, 10.0f,
+            VIEWPORT_HEIGHT - 10.0f);
 }
 
 void _process(float delta) {
@@ -91,6 +92,7 @@ void _draw(RenderTexture2D target) {
 
   BeginTextureMode(target);
   ClearBackground(BLACK);
+  /* draw_background(); */
   if (player.recovery_time <= 0.0) {
     DrawCircle(player.movement.position.x, player.movement.position.y, 9.0f,
                GREEN);
@@ -100,21 +102,23 @@ void _draw(RenderTexture2D target) {
              (Vector2){10.0f, 10.0f}, (float)mgsinker.baseSize, 1, WHITE);
   DrawTextEx(mgsinker, TextFormat("fps: %d", GetFPS()), (Vector2){10.0f, 30.0f},
              (float)mgsinker.baseSize, 1, WHITE);
+  DrawTextEx(mgsinker, TextFormat("score: %lu", score), (Vector2){10.0f, 50.0f},
+             (float)mgsinker.baseSize, 1, WHITE);
 #endif
   draw_bullets();
   draw_enemies();
   EndTextureMode();
 
+  // Draw the viewport to the screen.
   BeginDrawing();
   ClearBackground(BLACK);
   DrawTexturePro(
       target.texture,
-      (Rectangle){0.0f, 0.0f, target.texture.width,
-                  (float)-target.texture.height},
+      (Rectangle){0, 0, target.texture.width, -target.texture.height},
       (Rectangle){(GetScreenWidth() - VIEWPORT_WIDTH * scale) * 0.5f,
                   (GetScreenHeight() - VIEWPORT_HEIGHT * scale) * 0.5f,
                   VIEWPORT_WIDTH * scale, VIEWPORT_HEIGHT * scale},
-      (Vector2){0, 0}, 0.0f, WHITE);
+      (Vector2){0, 0}, 0, WHITE);
 
   EndDrawing();
 }
@@ -130,22 +134,23 @@ int main(void) {
   ChangeDirectory("resources");
   mgsinker = LoadFontEx("MGSinker.ttf", 8, 0, 255);
 
-  RenderTexture2D target = LoadRenderTexture(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-  SetTextureFilter(target.texture,
-                   TEXTURE_FILTER_BILINEAR); // bilinear for now...
+  RenderTexture2D screen_target =
+      LoadRenderTexture(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+  SetTextureFilter(screen_target.texture,
+                   TEXTURE_FILTER_POINT); // bilinear for now...
 
   float delta;
   initialise_bullet_pool();
   player.movement.position.x = VIEWPORT_WIDTH / 2;
   player.movement.position.y = VIEWPORT_HEIGHT - 30.0f;
 
-  enemies[0] = popcorn_drone;
+  enemies[0] = twist_drone;
   enemies[0].movement.position.x = VIEWPORT_WIDTH / 3;
   enemies[0].movement.position.y = VIEWPORT_HEIGHT / 4;
   enemies[0].config_flags = 0;
   enemies[0].init(&enemies[0]);
 
-  enemies[1] = popcorn_drone;
+  enemies[1] = twist_drone;
   enemies[1].movement.position.x = VIEWPORT_WIDTH * 2 / 3;
   enemies[1].movement.position.y = VIEWPORT_HEIGHT / 4;
   enemies[1].config_flags = 1;
@@ -154,7 +159,7 @@ int main(void) {
     delta = GetFrameTime();
     _input(delta);
     _process(delta);
-    _draw(target);
+    _draw(screen_target);
   }
 
   UnloadFont(mgsinker);

@@ -19,13 +19,17 @@ struct EnemyData {
   int health;
   float time_alive;
   Flags config_flags;
-  /* char *enemy_name; */
+  char *name;
   int score_value;
   /* float tension_value */
 };
 
-extern const EnemyData popcorn_drone;
 extern EnemyData enemies[MAX_ENEMIES];
+
+extern const EnemyData popcorn_drone;
+extern const EnemyData twist_drone;
+
+void spawn_enemy(EnemyData enemy, Flags config_flags, Vector2 initial_position);
 
 void damage_enemy(EnemyData *enemy, int damage);
 

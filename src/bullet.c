@@ -9,26 +9,19 @@
 
 static const Vector2 BULLET_COLLISION_RECT = (Vector2){2.0f, 2.0f};
 static const Vector2 PLAYER_COLLISION_RECT = (Vector2){2.0f, 2.0f};
-Texture2D bullet_sprite;
-
-typedef struct {
-  int top;
-  Bullet *stack[MAX_BULLETS];
-} BulletStack;
+static Texture2D bullet_sprite;
 
 static Bullet bullets[MAX_BULLETS] = {0};
-static BulletStack available_bullet_stack =
-    (BulletStack){.top = MAX_BULLETS - 1};
+static Stack bullet_stack;
 
 unsigned int current_bullets;
 
 extern EnemyData enemies[MAX_ENEMIES];
 
 static Bullet *pop_bullet() {
-  if (available_bullet_stack.top == -1)
+  Bullet *returned_bullet = (Bullet *)pop_stack(&bullet_stack);
+  if (!returned_bullet)
     return NULL;
-  Bullet *returned_bullet =
-      available_bullet_stack.stack[available_bullet_stack.top--];
   returned_bullet->active = true;
   current_bullets++;
   return returned_bullet;
@@ -36,11 +29,11 @@ static Bullet *pop_bullet() {
 
 static void push_bullet(Bullet *bullet) {
   bullet->active = false;
-  available_bullet_stack.stack[++available_bullet_stack.top] = bullet;
   current_bullets--;
+  push_stack(&bullet_stack, bullet);
 }
 
-static void fire(Vector2 initial_position, float initial_angle, BulletArgs args,
+static void fire(Vector2 initial_position, float direction, BulletArgs args,
                  bool player_bullet) {
   Bullet *bullet = pop_bullet();
   if (!bullet)
@@ -48,18 +41,28 @@ static void fire(Vector2 initial_position, float initial_angle, BulletArgs args,
   bullet->args = args;
   bullet->movement.position = initial_position;
   bullet->movement.velocity = Vector2Scale(
-      (Vector2){cosf(initial_angle), sinf(initial_angle)}, args.initial_speed);
+      (Vector2){cosf(direction), sinf(direction)}, args.initial_speed);
   bullet->ttl = args.initial_ttl;
   bullet->player = player_bullet;
 }
 
-static float get_angle_per_bullet(int count_bullets_in_ring) {
+static float ring_get_angle_per_bullet(int count_bullets_in_ring) {
   return TAU / (float)count_bullets_in_ring;
 }
 
-static float get_bullet_angle(float get_angle_per_bullet, int i,
-                              float rotation) {
+static float arc_get_angle_per_bullet(int count_bullets_in_arc,
+                                      float arc_angle) {
+  return arc_angle / ((float)count_bullets_in_arc - 1.0);
+}
+
+static float ring_get_bullet_angle(float get_angle_per_bullet, int i,
+                                   float rotation) {
   return (get_angle_per_bullet * i) + rotation;
+}
+
+static float arc_get_bullet_angle(float angle_per_bullet, int i, float rotation,
+                                  float arc_angle) {
+  return (angle_per_bullet * (float)i) + rotation - (arc_angle * 0.5f);
 }
 
 static Vector2 get_bullet_start_position(Vector2 origin, float offset,
@@ -69,9 +72,11 @@ static Vector2 get_bullet_start_position(Vector2 origin, float offset,
 }
 
 void initialise_bullet_pool(void) {
+  bullet_stack = initialise_stack(MAX_BULLETS, sizeof(Bullet *));
   for (int i = 0; i < MAX_BULLETS; i++) {
-    available_bullet_stack.stack[i] = &bullets[i];
+    bullet_stack.items[i] = &bullets[i];
   }
+  bullet_stack.top = MAX_BULLETS - 1;
   current_bullets = 0;
   bullet_sprite = LoadTexture("sprites/bullet/directed_bullet_2.png");
 }
@@ -119,7 +124,7 @@ void bullet_fire_one(Vector2 initial_position, float initial_angle,
   fire(initial_position, initial_angle, args, player_bullet);
 }
 
-void bullet_fire_ring(Vector2 initial_position, float initial_angle,
+void bullet_fire_ring(Vector2 initial_position, float direction,
                       BulletArgs args, bool player_bullet, int bullets_in_ring,
                       float ring_offset) {
   if (bullets_in_ring < 2) {
@@ -127,12 +132,32 @@ void bullet_fire_ring(Vector2 initial_position, float initial_angle,
                 "the firing configurations!");
     return;
   }
-  float angle_per_bullet = get_angle_per_bullet(bullets_in_ring);
+  float angle_per_bullet = ring_get_angle_per_bullet(bullets_in_ring);
   for (int i = 0; i < bullets_in_ring; i++) {
-    float bullet_angle = get_bullet_angle(angle_per_bullet, i, initial_angle);
+    float bullet_angle =
+        ring_get_bullet_angle(angle_per_bullet, i, DEG2RAD * direction);
+    Vector2 start_position =
+        get_bullet_start_position(initial_position, ring_offset, bullet_angle);
+    fire(start_position, bullet_angle, args, player_bullet);
+  }
+}
 
-    fire(get_bullet_start_position(initial_position, ring_offset, bullet_angle),
-         bullet_angle, args, player_bullet);
+void bullet_fire_arc(Vector2 initial_position, float direction, BulletArgs args,
+                     bool player_bullet, int bullets_in_arc, float arc_offset,
+                     float arc_angle) {
+  if (bullets_in_arc < 2) {
+    log_warning("Tried to fire a ring with less than 2 bullets. Please check "
+                "the firing configurations!");
+    return;
+  }
+  float angle_per_bullet =
+      arc_get_angle_per_bullet(bullets_in_arc, DEG2RAD * arc_angle);
+  for (int i = 0; i < bullets_in_arc; i++) {
+    float bullet_angle = arc_get_bullet_angle(
+        angle_per_bullet, i, DEG2RAD * direction, DEG2RAD * arc_angle);
+    Vector2 start_position =
+        get_bullet_start_position(initial_position, arc_offset, bullet_angle);
+    fire(start_position, bullet_angle, args, player_bullet);
   }
 }
 
