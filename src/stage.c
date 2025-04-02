@@ -1,0 +1,11 @@
+// TODO: Stage clear display
+// SOUL
+// KILL
+// MISSES
+// EXTENDS
+// MEDIAN TENSION
+// STAGE END TENSION
+// SURVIVABILITY
+//
+// 400 + [100 + [MT * 300]] * SV
+// = TOTAL REWARD

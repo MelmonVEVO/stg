@@ -1,11 +1,13 @@
 #include "bullet.h"
 #include "enemy.h"
+#include "item.h"
 #include "utils.h"
 #include <float.h>
 #include <raylib.h>
 #include <raymath.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define PLAYER_SPEED 200.0f
 #define PLAYER_FIRE_TIME 0.06f
@@ -24,8 +26,9 @@ static const BulletArgs PLAYER_BULLET_ARGS =
 static float fire_time = 0;
 static float recovery_time = 0.0;
 static Font mgsinker;
+static Sound music;
 
-extern unsigned int current_bullets;
+extern unsigned long current_bullets;
 extern EnemyData enemies[MAX_ENEMIES];
 
 static void kill_player(void) {
@@ -60,6 +63,7 @@ void move_player(float delta) {
 void _process(float delta) {
   process_enemies(delta);
   process_bullets(delta);
+  process_items(delta);
   check_bullet_collisions(player, &kill_player);
   player.recovery_time = MAX(player.recovery_time - delta, 0.0f);
 }
@@ -98,15 +102,16 @@ void _draw(RenderTexture2D target) {
                GREEN);
   }
 #ifdef DEBUG
-  DrawTextEx(mgsinker, TextFormat("bullets: %d", current_bullets),
+  DrawTextEx(mgsinker, TextFormat("bullets: %lu", current_bullets),
              (Vector2){10.0f, 10.0f}, (float)mgsinker.baseSize, 1, WHITE);
   DrawTextEx(mgsinker, TextFormat("fps: %d", GetFPS()), (Vector2){10.0f, 30.0f},
              (float)mgsinker.baseSize, 1, WHITE);
   DrawTextEx(mgsinker, TextFormat("score: %lu", score), (Vector2){10.0f, 50.0f},
              (float)mgsinker.baseSize, 1, WHITE);
 #endif
-  draw_bullets();
+  draw_items();
   draw_enemies();
+  draw_bullets();
   EndTextureMode();
 
   // Draw the viewport to the screen.
@@ -129,10 +134,14 @@ int main(void) {
   InitWindow((int)VIEWPORT_WIDTH, (int)VIEWPORT_HEIGHT, "STG");
   SetWindowMinSize((int)VIEWPORT_WIDTH, (int)VIEWPORT_HEIGHT);
   SetTargetFPS(120);
+  InitAudioDevice();
   HideCursor();
 
   ChangeDirectory("resources");
   mgsinker = LoadFontEx("MGSinker.ttf", 8, 0, 255);
+  music = LoadSound("music/TR_02.mp3");
+  SetSoundVolume(music, 0.8f);
+  PlaySound(music);
 
   RenderTexture2D screen_target =
       LoadRenderTexture(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
@@ -140,29 +149,35 @@ int main(void) {
                    TEXTURE_FILTER_POINT); // bilinear for now...
 
   float delta;
+  float stage_time = 0;
   initialise_bullet_pool();
+  initialise_item_pool();
+  srand(GetTime());
   player.movement.position.x = VIEWPORT_WIDTH / 2;
   player.movement.position.y = VIEWPORT_HEIGHT - 30.0f;
 
   enemies[0] = twist_drone;
   enemies[0].movement.position.x = VIEWPORT_WIDTH / 3;
-  enemies[0].movement.position.y = VIEWPORT_HEIGHT / 4;
+  enemies[0].movement.position.y = 0;
   enemies[0].config_flags = 0;
   enemies[0].init(&enemies[0]);
 
   enemies[1] = twist_drone;
   enemies[1].movement.position.x = VIEWPORT_WIDTH * 2 / 3;
-  enemies[1].movement.position.y = VIEWPORT_HEIGHT / 4;
+  enemies[1].movement.position.y = 0;
   enemies[1].config_flags = 1;
   enemies[1].init(&enemies[1]);
+
   while (!WindowShouldClose()) {
     delta = GetFrameTime();
     _input(delta);
     _process(delta);
     _draw(screen_target);
+    stage_time += delta;
   }
 
   UnloadFont(mgsinker);
+  CloseAudioDevice();
   CloseWindow();
 
   return 0;

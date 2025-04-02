@@ -1,5 +1,6 @@
 #include "bullet.h"
 #include "enemy.h"
+#include "item.h"
 #include "utils.h"
 #include <math.h>
 #include <raylib.h>
@@ -14,11 +15,11 @@ static Texture2D bullet_sprite;
 static Bullet bullets[MAX_BULLETS] = {0};
 static Stack bullet_stack;
 
-unsigned int current_bullets;
+unsigned long current_bullets;
 
 extern EnemyData enemies[MAX_ENEMIES];
 
-static Bullet *pop_bullet() {
+static Bullet *pop_bullet(void) {
   Bullet *returned_bullet = (Bullet *)pop_stack(&bullet_stack);
   if (!returned_bullet)
     return NULL;
@@ -73,7 +74,7 @@ static Vector2 get_bullet_start_position(Vector2 origin, float offset,
 
 void initialise_bullet_pool(void) {
   bullet_stack = initialise_stack(MAX_BULLETS, sizeof(Bullet *));
-  for (int i = 0; i < MAX_BULLETS; i++) {
+  for (unsigned long i = 0; i < MAX_BULLETS; i++) {
     bullet_stack.items[i] = &bullets[i];
   }
   bullet_stack.top = MAX_BULLETS - 1;
@@ -82,7 +83,7 @@ void initialise_bullet_pool(void) {
 }
 
 void process_bullets(float delta) {
-  for (int i = 0; i < MAX_BULLETS; i++) {
+  for (unsigned long i = 0; i < MAX_BULLETS; i++) {
     if (!bullets[i].active)
       continue;
     Bullet *bullet = &bullets[i];
@@ -100,11 +101,10 @@ void process_bullets(float delta) {
 }
 
 void draw_bullets(void) {
-  for (int i = 0; i < MAX_BULLETS; i++) {
+  for (unsigned long i = 0; i < MAX_BULLETS; i++) {
     if (!bullets[i].active)
       continue;
     Bullet *bullet = &bullets[i];
-    Vector2 at = bullet->movement.position;
     float rotation =
         atan2f(bullet->movement.velocity.y, bullet->movement.velocity.x) *
         RAD2DEG;
@@ -167,13 +167,13 @@ void check_bullet_collisions(PlayerData player_data,
   Rectangle player_collision_box = create_centred_rectangle(
       player_data.movement.position.x, player_data.movement.position.y,
       PLAYER_COLLISION_RECT);
-  for (int bullet_i = 0; bullet_i < MAX_BULLETS; bullet_i++) {
+  for (unsigned long bullet_i = 0; bullet_i < MAX_BULLETS; bullet_i++) {
     if (!bullets[bullet_i].active)
       continue;
 
     Bullet *bullet = &bullets[bullet_i];
     if (bullet->player) {
-      for (int enemy_i = 0; enemy_i < MAX_ENEMIES; enemy_i++) {
+      for (unsigned long enemy_i = 0; enemy_i < MAX_ENEMIES; enemy_i++) {
         if (enemies[enemy_i].health <= 0)
           continue;
         if (CheckCollisionRecs(
@@ -196,5 +196,15 @@ void check_bullet_collisions(PlayerData player_data,
       kill_player();
       push_bullet(bullet);
     }
+  }
+}
+
+void cancel_bullets() {
+  for (unsigned long i = 0; i < MAX_BULLETS; i++) {
+    Bullet *bullet = &bullets[i];
+    if (!bullet->active || bullet->player)
+      continue;
+    spawn_item(CRYSTAL_BLUE, bullet->movement.position);
+    push_bullet(bullet);
   }
 }

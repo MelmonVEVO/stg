@@ -47,7 +47,7 @@ Rectangle create_centred_rectangle(float x, float y, Vector2 sizes);
 
 Vector2 rectangle_centre(Rectangle rectangle);
 
-Stack initialise_stack(size_t capacity, size_t element_sizeof);
+Stack initialise_stack(const size_t capacity, const size_t element_sizeof);
 
 void free_stack(Stack *stack);
 
@@ -55,9 +55,9 @@ void *pop_stack(Stack *stack);
 
 void push_stack(Stack *stack, void *item);
 
-void log_warning(char *s);
+void log_warning(const char *s);
 
-void log_error(char *s);
+void log_error(const char *s);
 
 void draw_outlined_text_ex(Font font, const char *text, Vector2 position,
                            float font_size, float spacing, Color colour,

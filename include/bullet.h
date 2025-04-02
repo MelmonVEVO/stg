@@ -5,9 +5,9 @@
 #include "utils.h"
 #include <raylib.h>
 
-#define MAX_BULLETS 20000
+#define MAX_BULLETS 20000ul
 
-extern unsigned int current_bullets;
+extern unsigned long current_bullets;
 
 typedef struct {
   float initial_speed;
@@ -49,5 +49,7 @@ void bullet_fire_random_sphere(Vector2 initial_position, float initial_angle,
                                int bullets_in_sphere, float sphere_radius);
 
 void check_bullet_collisions(PlayerData player_data, void (*kill_player)(void));
+
+void cancel_bullets(void);
 
 #endif

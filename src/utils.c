@@ -29,7 +29,7 @@ Vector2 rectangle_centre(Rectangle rectangle) {
                    rectangle.y + (rectangle.height / 2.0f)};
 }
 
-Stack initialise_stack(size_t capacity, size_t element_sizeof) {
+Stack initialise_stack(const size_t capacity, const size_t element_sizeof) {
   Stack new = {.capacity = capacity, .top = 0};
   new.items = malloc(element_sizeof * capacity);
   return new;
@@ -55,10 +55,10 @@ void push_stack(Stack *stack, void *item) {
   stack->items[++stack->top] = item;
 }
 
-void log_warning(char *s) {
-  fprintf(stderr, TERM_WARNING "[WARNING] " TERM_NORMAL "%s", s);
+void log_warning(const char *s) {
+  fprintf(stderr, TERM_WARNING "[WARNING] " TERM_NORMAL "%s\n", s);
 }
 
-void log_error(char *s) {
-  fprintf(stderr, TERM_ERROR "[ERROR] " TERM_NORMAL "%s", s);
+void log_error(const char *s) {
+  fprintf(stderr, TERM_ERROR "[ERROR] " TERM_NORMAL "%s\n", s);
 }

@@ -6,10 +6,9 @@
 #include <stdbool.h>
 
 EnemyData enemies[MAX_ENEMIES] = {0};
-static int enemy_stack_top = MAX_ENEMIES - 1;
-static EnemyData *available_enemy_stack[MAX_ENEMIES];
+Stack available_enemy_stack;
 
-unsigned int active_enemy_count = 0;
+unsigned long active_enemy_count = 0;
 
 extern unsigned long score;
 
@@ -127,16 +126,15 @@ static void twist_drone_die(EnemyData *self) {
                   false, 3, 5.0f, 20.0f);
 }
 
-const EnemyData twist_drone = {
-    .movement = {.velocity = (Vector2){0, POPCORN_INITIAL_VELOCITY}},
-    .health = 20,
-    .collision_box = {0, 0, 16.0f, 16.0f},
-    .init = &enemy_noop,
-    .process = &twist_drone_process,
-    .die = &twist_drone_die,
-    .draw = &twist_drone_draw,
-    .score_value = 120,
-    .name = "KR-88 Twist"};
+const EnemyData twist_drone = {.movement = {.velocity = (Vector2){0, 300.0f}},
+                               .health = 20,
+                               .collision_box = {0, 0, 16.0f, 16.0f},
+                               .init = &enemy_noop,
+                               .process = &twist_drone_process,
+                               .die = &twist_drone_die,
+                               .draw = &twist_drone_draw,
+                               .score_value = 120,
+                               .name = "KR-88 Twist"};
 
 // --- NORMAL ENEMY STUFF ---
 
@@ -152,15 +150,15 @@ void damage_enemy(EnemyData *enemy, int damage) {
 }
 
 void process_enemies(float delta) {
-  for (int i = 0; i < MAX_ENEMIES; i++) {
+  for (unsigned long i = 0; i < MAX_ENEMIES; i++) {
     if (enemies[i].health <= 0)
       continue;
     enemies[i].process(&enemies[i], delta);
   }
 }
 
-void draw_enemies() {
-  for (int i = 0; i < MAX_ENEMIES; i++) {
+void draw_enemies(void) {
+  for (unsigned long i = 0; i < MAX_ENEMIES; i++) {
     if (enemies[i].health <= 0)
       continue;
     enemies[i].draw(&enemies[i]);
