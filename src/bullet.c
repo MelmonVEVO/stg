@@ -2,6 +2,7 @@
 #include "enemy.h"
 #include "item.h"
 #include "utils.h"
+#include <float.h>
 #include <math.h>
 #include <raylib.h>
 #include <raymath.h>
@@ -10,12 +11,14 @@
 
 static const Vector2 BULLET_COLLISION_RECT = (Vector2){2.0f, 2.0f};
 static const Vector2 PLAYER_COLLISION_RECT = (Vector2){2.0f, 2.0f};
+
+// TEMP
 static Texture2D bullet_sprite;
 
 static Bullet bullets[MAX_BULLETS] = {0};
 static Stack bullet_stack;
 
-unsigned long current_bullets;
+long current_bullets;
 
 extern EnemyData enemies[MAX_ENEMIES];
 
@@ -40,6 +43,9 @@ static void fire(Vector2 initial_position, float direction, BulletArgs args,
   if (!bullet)
     return;
   bullet->args = args;
+  if (bullet->args.max_speed == 0) {
+    bullet->args.max_speed = FLT_MAX;
+  }
   bullet->movement.position = initial_position;
   bullet->movement.velocity = Vector2Scale(
       (Vector2){cosf(direction), sinf(direction)}, args.initial_speed);
@@ -74,7 +80,7 @@ static Vector2 get_bullet_start_position(Vector2 origin, float offset,
 
 void initialise_bullet_pool(void) {
   bullet_stack = initialise_stack(MAX_BULLETS, sizeof(Bullet *));
-  for (unsigned long i = 0; i < MAX_BULLETS; i++) {
+  for (long i = 0; i < MAX_BULLETS; i++) {
     bullet_stack.items[i] = &bullets[i];
   }
   bullet_stack.top = MAX_BULLETS - 1;
@@ -83,7 +89,7 @@ void initialise_bullet_pool(void) {
 }
 
 void process_bullets(float delta) {
-  for (unsigned long i = 0; i < MAX_BULLETS; i++) {
+  for (long i = 0; i < MAX_BULLETS; i++) {
     if (!bullets[i].active)
       continue;
     Bullet *bullet = &bullets[i];
@@ -101,7 +107,7 @@ void process_bullets(float delta) {
 }
 
 void draw_bullets(void) {
-  for (unsigned long i = 0; i < MAX_BULLETS; i++) {
+  for (long i = 0; i < MAX_BULLETS; i++) {
     if (!bullets[i].active)
       continue;
     Bullet *bullet = &bullets[i];
@@ -161,19 +167,20 @@ void bullet_fire_arc(Vector2 initial_position, float direction, BulletArgs args,
   }
 }
 
-void check_bullet_collisions(PlayerData player_data,
+void check_bullet_collisions(PlayerData *player_data,
                              void (*kill_player)(void)) {
   // PERF: All of this can be optimised later, for now we just need a prototype.
   Rectangle player_collision_box = create_centred_rectangle(
-      player_data.movement.position.x, player_data.movement.position.y,
+      player_data->movement.position.x, player_data->movement.position.y,
       PLAYER_COLLISION_RECT);
-  for (unsigned long bullet_i = 0; bullet_i < MAX_BULLETS; bullet_i++) {
+  Bullet *bullet;
+  for (long bullet_i = 0; bullet_i < MAX_BULLETS; bullet_i++) {
     if (!bullets[bullet_i].active)
       continue;
 
-    Bullet *bullet = &bullets[bullet_i];
+    bullet = &bullets[bullet_i];
     if (bullet->player) {
-      for (unsigned long enemy_i = 0; enemy_i < MAX_ENEMIES; enemy_i++) {
+      for (long enemy_i = 0; enemy_i < MAX_ENEMIES; enemy_i++) {
         if (enemies[enemy_i].health <= 0)
           continue;
         if (CheckCollisionRecs(
@@ -187,7 +194,7 @@ void check_bullet_collisions(PlayerData player_data,
         }
       }
     }
-    if (player_data.recovery_time > 0.0f)
+    if (player_data->recovery_time > 0.0f)
       return;
     if (CheckCollisionRecs(create_centred_rectangle(bullet->movement.position.x,
                                                     bullet->movement.position.y,
@@ -200,7 +207,7 @@ void check_bullet_collisions(PlayerData player_data,
 }
 
 void cancel_bullets() {
-  for (unsigned long i = 0; i < MAX_BULLETS; i++) {
+  for (long i = 0; i < MAX_BULLETS; i++) {
     Bullet *bullet = &bullets[i];
     if (!bullet->active || bullet->player)
       continue;

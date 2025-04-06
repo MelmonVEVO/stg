@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <raylib.h>
 #include <raymath.h>
 #include <stdio.h>
 
@@ -38,7 +39,7 @@ Stack initialise_stack(const size_t capacity, const size_t element_sizeof) {
 void free_stack(Stack *stack) { free(stack->items); }
 
 void *pop_stack(Stack *stack) {
-  if (stack->top == -1UL) {
+  if (stack->top <= -1l) {
     log_warning("Stack empty, skipping.");
     return NULL;
   }
@@ -55,10 +56,19 @@ void push_stack(Stack *stack, void *item) {
   stack->items[++stack->top] = item;
 }
 
+void log_info(const char *s) {
+  printf(TERM_INFO "[INFO] " TERM_NORMAL "%s\n", s);
+}
+
 void log_warning(const char *s) {
   fprintf(stderr, TERM_WARNING "[WARNING] " TERM_NORMAL "%s\n", s);
 }
 
 void log_error(const char *s) {
   fprintf(stderr, TERM_ERROR "[ERROR] " TERM_NORMAL "%s\n", s);
+}
+
+// Returns a random float between 0 and 1.
+float random_float(void) {
+  return (float)GetRandomValue(0, RAND_MAX) / (float)RAND_MAX;
 }

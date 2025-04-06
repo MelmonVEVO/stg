@@ -8,7 +8,7 @@
 EnemyData enemies[MAX_ENEMIES] = {0};
 Stack available_enemy_stack;
 
-unsigned long active_enemy_count = 0;
+long active_enemy_count = 0;
 
 extern unsigned long score;
 
@@ -136,21 +136,55 @@ const EnemyData twist_drone = {.movement = {.velocity = (Vector2){0, 300.0f}},
                                .score_value = 120,
                                .name = "KR-88 Twist"};
 
+// --- HOVER DRONE ---
+
+static Texture2D hover_drone_texture;
+
+static void hover_drone_process(EnemyData *self, float delta) {}
+
+static void hover_drone_draw(EnemyData *self) {}
+
+const EnemyData hover_drone = {.health = 20000,
+                               .collision_box = {0, 0, 24.0f, 16.0f},
+                               .init = &enemy_noop,
+                               .process = &hover_drone_process,
+                               .die = &enemy_noop,
+                               .draw = &hover_drone_draw,
+                               .score_value = 120,
+                               .name = "LT-50 Phalanx"};
+
 // --- NORMAL ENEMY STUFF ---
 
 void spawn_enemy(EnemyData template, Flags config_flags,
-                 Vector2 initial_position) {}
+                 Vector2 initial_position) {
+  EnemyData *enemy = (EnemyData *)pop_stack(&available_enemy_stack);
+  if (!enemy)
+    return;
+  *enemy = template;
+  enemy->config_flags = config_flags;
+  enemy->movement.position = initial_position;
+  enemy->health = template.health;
+  enemy->init(enemy);
+  active_enemy_count++;
+}
+
+void return_enemy(EnemyData *enemy) {
+  enemy->health = 0;
+  push_stack(&available_enemy_stack, enemy);
+  active_enemy_count--;
+}
 
 void damage_enemy(EnemyData *enemy, int damage) {
   enemy->health -= damage;
   if (enemy->health <= 0) {
     enemy->die(enemy);
     score += enemy->score_value;
+    return_enemy(enemy);
   }
 }
 
 void process_enemies(float delta) {
-  for (unsigned long i = 0; i < MAX_ENEMIES; i++) {
+  for (long i = 0; i < MAX_ENEMIES; i++) {
     if (enemies[i].health <= 0)
       continue;
     enemies[i].process(&enemies[i], delta);
@@ -158,7 +192,7 @@ void process_enemies(float delta) {
 }
 
 void draw_enemies(void) {
-  for (unsigned long i = 0; i < MAX_ENEMIES; i++) {
+  for (long i = 0; i < MAX_ENEMIES; i++) {
     if (enemies[i].health <= 0)
       continue;
     enemies[i].draw(&enemies[i]);

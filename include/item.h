@@ -3,7 +3,7 @@
 
 #include "utils.h"
 
-#define MAX_ITEMS 400ul
+#define MAX_ITEMS 1000l
 #define ITEM_GRAVITY 350.0f
 
 typedef enum { CRYSTAL_BLUE, CRYSTAL_GREEN, SPIRIT_CHIP, EXTRA_LIFE } ItemType;
@@ -16,7 +16,7 @@ typedef struct {
   bool follow;
 } Item;
 
-void make_all_items_follow(void);
+void make_all_crystals_follow(void);
 
 void spawn_item(ItemType type, Vector2 position);
 

@@ -7,7 +7,6 @@
 #include <raymath.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #define PLAYER_SPEED 200.0f
 #define PLAYER_FIRE_TIME 0.06f
@@ -15,6 +14,7 @@
 
 PlayerData player = {0};
 unsigned long score = 0;
+float tension = 0;
 
 static const BulletArgs PLAYER_BULLET_ARGS =
     (BulletArgs){.max_speed = FLT_MAX,
@@ -24,11 +24,10 @@ static const BulletArgs PLAYER_BULLET_ARGS =
                  .angular_velocity = 0.0f};
 
 static float fire_time = 0;
-static float recovery_time = 0.0;
 static Font mgsinker;
 static Sound music;
 
-extern unsigned long current_bullets;
+extern long current_bullets;
 extern EnemyData enemies[MAX_ENEMIES];
 
 static void kill_player(void) {
@@ -41,16 +40,16 @@ void move_player(float delta) {
 
   // Player movement.
   if (IsKeyDown(KEY_LEFT))
-    player.movement.velocity.x -= 1.0f * PLAYER_SPEED;
+    player.movement.velocity.x -= 1.0f;
   if (IsKeyDown(KEY_RIGHT))
-    player.movement.velocity.x += 1.0f * PLAYER_SPEED;
+    player.movement.velocity.x += 1.0f;
   if (IsKeyDown(KEY_UP))
-    player.movement.velocity.y -= 1.0f * PLAYER_SPEED;
+    player.movement.velocity.y -= 1.0f;
   if (IsKeyDown(KEY_DOWN))
-    player.movement.velocity.y += 1.0f * PLAYER_SPEED;
+    player.movement.velocity.y += 1.0f;
 
-  player.movement.velocity.x *= delta;
-  player.movement.velocity.y *= delta;
+  player.movement.velocity.x *= delta * PLAYER_SPEED;
+  player.movement.velocity.y *= delta * PLAYER_SPEED;
 
   player.movement.position.x =
       Clamp(player.movement.position.x + player.movement.velocity.x, 10.0f,
@@ -61,10 +60,10 @@ void move_player(float delta) {
 }
 
 void _process(float delta) {
-  process_enemies(delta);
-  process_bullets(delta);
   process_items(delta);
-  check_bullet_collisions(player, &kill_player);
+  process_bullets(delta);
+  check_bullet_collisions(&player, &kill_player);
+  process_enemies(delta);
   player.recovery_time = MAX(player.recovery_time - delta, 0.0f);
 }
 
@@ -101,17 +100,18 @@ void _draw(RenderTexture2D target) {
     DrawCircle(player.movement.position.x, player.movement.position.y, 9.0f,
                GREEN);
   }
-#ifdef DEBUG
-  DrawTextEx(mgsinker, TextFormat("bullets: %lu", current_bullets),
-             (Vector2){10.0f, 10.0f}, (float)mgsinker.baseSize, 1, WHITE);
-  DrawTextEx(mgsinker, TextFormat("fps: %d", GetFPS()), (Vector2){10.0f, 30.0f},
-             (float)mgsinker.baseSize, 1, WHITE);
-  DrawTextEx(mgsinker, TextFormat("score: %lu", score), (Vector2){10.0f, 50.0f},
-             (float)mgsinker.baseSize, 1, WHITE);
-#endif
   draw_items();
   draw_enemies();
   draw_bullets();
+#ifdef DEBUG
+  DrawTextEx(mgsinker, TextFormat("bullets: %lu", current_bullets),
+             (Vector2){10.0f, 10.0f}, (float)mgsinker.baseSize, 1, WHITE);
+  extern long items_in_field;
+  DrawTextEx(mgsinker, TextFormat("items: %lu", items_in_field),
+             (Vector2){10.0f, 30.0f}, (float)mgsinker.baseSize, 1, WHITE);
+  DrawTextEx(mgsinker, TextFormat("score: %lu", score), (Vector2){10.0f, 50.0f},
+             (float)mgsinker.baseSize, 1, WHITE);
+#endif
   EndTextureMode();
 
   // Draw the viewport to the screen.
@@ -130,29 +130,27 @@ void _draw(RenderTexture2D target) {
 
 int main(void) {
   SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
-
   InitWindow((int)VIEWPORT_WIDTH, (int)VIEWPORT_HEIGHT, "STG");
   SetWindowMinSize((int)VIEWPORT_WIDTH, (int)VIEWPORT_HEIGHT);
   SetTargetFPS(120);
+  /* SetExitKey(0); */
   InitAudioDevice();
   HideCursor();
-
+  SetRandomSeed(GetTime());
   ChangeDirectory("resources");
+  initialise_bullet_pool();
+  initialise_item_pool();
   mgsinker = LoadFontEx("MGSinker.ttf", 8, 0, 255);
   music = LoadSound("music/TR_02.mp3");
-  SetSoundVolume(music, 0.8f);
-  PlaySound(music);
+  SetSoundVolume(music, 0.5f);
+  /* PlaySound(music); */
 
   RenderTexture2D screen_target =
       LoadRenderTexture(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-  SetTextureFilter(screen_target.texture,
-                   TEXTURE_FILTER_POINT); // bilinear for now...
+  SetTextureFilter(screen_target.texture, TEXTURE_FILTER_POINT);
 
   float delta;
   float stage_time = 0;
-  initialise_bullet_pool();
-  initialise_item_pool();
-  srand(GetTime());
   player.movement.position.x = VIEWPORT_WIDTH / 2;
   player.movement.position.y = VIEWPORT_HEIGHT - 30.0f;
 
@@ -171,6 +169,8 @@ int main(void) {
   while (!WindowShouldClose()) {
     delta = GetFrameTime();
     _input(delta);
+    spawn_item(CRYSTAL_BLUE,
+               (Vector2){VIEWPORT_WIDTH / 2.0f, VIEWPORT_HEIGHT / 2.0f});
     _process(delta);
     _draw(screen_target);
     stage_time += delta;
